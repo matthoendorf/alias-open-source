@@ -4,7 +4,7 @@
 
 <h3 align="center">Roundtable Alias Open Source</h3>
 
-This repo exposes three open-ended–response checks that were part of the original Roundtable Alias API:
+This repo contains code for the open-end quality checks that were part of the original Roundtable Alias API.
 
 * **Categorizations**  
   Uses OpenAI chat completions to label a response as one of Valid, Profane, Off-topic, Gibberish, and GPT. The model uses the survey question and response and returns a single word corresponding to the categorization.
