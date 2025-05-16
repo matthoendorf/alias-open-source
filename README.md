@@ -1,5 +1,5 @@
 <p align="center">
-<img src="assets/logo-black.png" alt="Roundtable Logo" width = '100'>
+<img src="assets/logo-black.png" alt="Roundtable Logo" width = '80'>
 </p>
 
 <h3 align="center">Roundtable Alias Open Source</h3>
