@@ -28,9 +28,7 @@ The open-source package covers only content checks from Alias. Our full behavior
 
 The entry point is `main.js`: this script validates the payload, cleans the data, and then coordinates the heavy-lift helpers.
 
-* **cross-duplicate-utils.js**: decides which responses need duplicate checks and this into manageable batches.
-
-* For each batch it fires an async call to **identify-duplicates.js**. Every call is handled by an independent server-side worker (serverless function, background job, etc.), so the string-distance calculations run in true parallel.
+* **cross-duplicate-utils.js**: decides which responses need duplicate checks and chunks this into manageable batches. For each batch it fires an async call to **identify-duplicates.js**. Every call is handled by an independent server-side worker (serverless function, background job, etc.), so the string-distance calculations run in true parallel.
 
 * **openai-utils.js**: runs the two OpenAI calls for categorization and effort scoring
 
