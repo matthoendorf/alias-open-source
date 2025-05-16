@@ -6,14 +6,11 @@
 
 This repo contains code for the open-end quality checks that were part of the original Roundtable Alias API.
 
-* **Categorizations**  
-  Uses OpenAI chat completions to label a response as one of Valid, Profane, Off-topic, Gibberish, and GPT. The model uses the survey question and response and returns a single word corresponding to the categorization.
+* **Categorizations**: Uses OpenAI chat completions to label a response as one of Valid, Profane, Off-topic, Gibberish, and GPT. The model uses the survey question and response and returns a single word corresponding to the categorization.
 
-* **Effort scores**  
-  Uses OpenAI to rate the response 1 – 10 (0 when the answer is empty). Scores of 4–7 are typical. Lower means minimal effort, and higher signals unusually detailed writing which may be GPT-generated.
+* **Effort scores**: Uses OpenAI to rate the response 1 – 10 (0 when the answer is empty). Scores of 4–7 are typical. Lower means minimal effort, and higher signals unusually detailed writing which may be GPT-generated.
 
-* **Duplicate matching**  
- Duplicate matching uses string-distance methods (Levenshtein distance and longest-common-substring) to identify and group likely duplicates.
+* **Duplicate matching**: Duplicate matching uses string-distance methods (Levenshtein distance and longest-common-substring) to identify and group likely duplicates.
 
   * **Self duplicates** are within the same participant; any length triggers a flag.  
   * **Cross duplicates** compare against other participants' answers to the same question.  
@@ -79,7 +76,7 @@ node main.js                    # or deploy as a Netlify / labmda function
 
 ### Still to implement
 
-These helper functions are intentionally left blank as they require integration with your database and server. You must complete them before the pipeline will run end-to-end:
+The following helper functions are intentionally left blank as they require integration with your database and server logic. You must complete them before the pipeline will run end-to-end:
 
 * **getGroupValue** (`helpers/cross-duplicate-utils.js`) – returns and increments the next group index for a question when no duplicates are found
 * **getOtherResponsesFromSurvey** (`helpers/cross-duplicate-utils.js`) – fetches existing answers for the same survey from your database
