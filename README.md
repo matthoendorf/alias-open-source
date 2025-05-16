@@ -6,7 +6,7 @@
 
 This repo contains code for three open-end quality checks that were part of the original Roundtable Alias API:
 
-* **Categorizations**: Uses OpenAI to label a response as one of Valid, Profane, Off-topic, Gibberish, and GPT. The model uses the survey question and response and returns a single word corresponding to the categorization.
+* **Categorizations**: Uses OpenAI to label a response as `Valid`, `Profane`, `Off-topic`, `Gibberish`, or `GPT`. The model uses the survey question and response and returns a single word corresponding to the categorization.
 
 * **Effort scores**: Uses OpenAI to rate the response 1 – 10 (0 when the answer is empty). Scores of 4–7 are typical. Lower means minimal effort, and higher signals unusually detailed writing which may be GPT-generated.
 
