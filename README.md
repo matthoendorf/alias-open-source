@@ -26,6 +26,18 @@ The open-source package covers only content checks from Alias. Our full behavior
 
 ## Organization
 
+The entry point is `main.js`: this script validates the payload, cleans the data, and then coordinates the heavy-lift helpers.
+
+* **cross-duplicate-utils.js**: decides which responses need duplicate checks and this into manageable batches.
+
+* For each batch it fires an async call to **identify-duplicates.js**. Every call is handled by an independent server-side worker (serverless function, background job, etc.), so the string-distance calculations run in true parallel.
+
+* **openai-utils.js**: runs the two OpenAI calls for categorization and effort scoring
+
+* **string-utils.js**: supplies the raw Levenshtein/LCS helpers, **json-utils.js** handles resilient body parsing, and **prompts.js** stores the frozen few-shot prompts.
+
+The overall pattern is that `main.js` orchestrates a set of narrowly focused helpers, and duplicate matching is chunked and executed in parallel workers so a large survey cannot block the rest of the pipeline.
+
 ```
 ├── config.js                 # thresholds / model / timeouts
 ├── identify-duplicates.js    # server-side endpoint hit by helpers
@@ -45,34 +57,27 @@ git clone <repo>
 cd alias-open-source
 npm install                     # installs openai, he, sanitize-html, …
 export API_SECRET="Bearer sk-…" # your OpenAI key
-node main.js                    # or deploy as a Netlify / labmda function
+node main.js                    # or deploy as a Netlify / lambda function
 ```
 
 ## Configuration
 
 ### config.js glossary
 
-* **TIMEOUT_MS**  
-  Hard stop (in milliseconds) for the entire Lambda / Netlify-function run.  
+* **TIMEOUT_MS**: Hard stop (in milliseconds) for the entire Lambda / Netlify-function run.  
   If the handler doesn't return in this time the request is rejected with “Request timed out”.
 
-* **normLevThreshold**  
-  Maximum *normalised* Levenshtein distance (0 – 1). If the distance between two answers is less than or equal to `normLevThreshold`, they count as duplicates.
+* **normLevThreshold**: Maximum *normalised* Levenshtein distance (0 – 1). If the distance between two answers is less than or equal to `normLevThreshold`, they count as duplicates.
 
-* **rawLevThreshold**  
-  Maximum *raw* Levenshtein distance (absolute character edits). If the distance is less than or equal to `rawLevThreshold`, the answers count as duplicates (except for ultra-short strings).
+* **rawLevThreshold**: Maximum *raw* Levenshtein distance (absolute character edits). If the distance is less than or equal to `rawLevThreshold`, the answers count as duplicates (except for ultra-short strings).
 
-* **normLCSThreshold**  
-  Minimum *normalised* longest-common-substring (LCS) ratio (0 – 1). If the ratio is greater than or equal to `normLCSThreshold`, the pair is treated as a duplicate.
+* **normLCSThreshold**: Minimum *normalised* longest-common-substring (LCS) ratio (0 – 1). If the ratio is greater than or equal to `normLCSThreshold`, the pair is treated as a duplicate.
 
-* **rawLCSThreshold**  
-  Minimum absolute LCS length (characters). If two answers share at least `rawLCSThreshold` consecutive characters, they are flagged as duplicates.
+* **rawLCSThreshold**: Minimum absolute LCS length (characters). If two answers share at least `rawLCSThreshold` consecutive characters, they are flagged as duplicates.
 
-* **maxBatchSize**  
-  When checking a target answer against other responses, we chunk that list into batches no larger than this before sending them to `identify-duplicates.js`.  
+* **maxBatchSize**: When checking a target answer against other responses, we chunk that list into batches no larger than this before sending them to `identify-duplicates.js`.  
 
-* **openAIModel**  
-  Name of the OpenAI chat model used for quality classification and effort scoring (defaults to `"gpt-4o"`).
+* **openAIModel**: Name of the OpenAI chat model used for quality classification and effort scoring (defaults to `"gpt-4o"`).
 
 ### Still to implement
 
