@@ -112,11 +112,3 @@ npm run deploy                  # deploy to AWS
 ## API Documentation
 
 For detailed information about the API endpoints, request/response formats, and usage examples, please refer to the [API Documentation](API.md).
-
-### Still to implement
-
-The following helper functions are intentionally left blank as they require integration with your database and server logic. You must complete them before the pipeline will run end-to-end:
-
-* **getGroupValue** (`helpers/cross-duplicate-utils.js`) – returns and increments the next group index for a question when no duplicates are found
-* **getOtherResponsesFromSurvey** (`helpers/cross-duplicate-utils.js`) – fetches existing answers for the same survey from your database
-* **batchedResponse** (`helpers/cross-duplicate-utils.js`) – POST a chunk of responses to `identify-duplicates.js` and return metrics for each response
