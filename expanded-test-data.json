@@ -1,0 +1,33 @@
+{
+  "questions": {
+    "q1": "What is your favorite color?",
+    "q2": "Describe your ideal vacation.",
+    "q3": "How would you improve our product?",
+    "q4": "What challenges did you face when using our service?",
+    "q5": "Tell us about your experience with customer support.",
+    "q6": "What features would you like to see added?",
+    "q7": "How likely are you to recommend our product to others?",
+    "q8": "What is your opinion on our pricing structure?",
+    "q9": "Describe your typical usage of our product.",
+    "q10": "What is your favorite color?",
+    "q11": "What do you think about climate change?",
+    "q12": "How would you describe your political views?"
+  },
+  "survey_id": "survey123",
+  "participant_id": "participant456",
+  "responses": {
+    "q1": "Blue",
+    "q2": "A relaxing beach vacation with plenty of sunshine.",
+    "q3": "When considering potential improvements for your product, I would suggest enhancing the user interface to make it more intuitive and user-friendly. Additionally, implementing a more robust search functionality would greatly benefit users who need to quickly find specific features or information. The current navigation system, while functional, could be streamlined to reduce the number of clicks required to access commonly used features. Furthermore, expanding the available customization options would allow users to tailor the experience to their specific needs and preferences, potentially increasing overall satisfaction and retention rates.",
+    "q4": "fuck this shit, your service is garbage",
+    "q5": "asdfkjl asldkfj aslkdjf",
+    "q6": "I like pizza and hamburgers",
+    "q7": "7",
+    "q8": "k",
+    "q9": "Blue",
+    "q10": "Blue",
+    "q11": "",
+    "q12": "I believe in a balanced approach to governance that prioritizes individual freedoms while also acknowledging the importance of social responsibility. My views are shaped by a commitment to evidence-based policy-making and a recognition that complex problems often require nuanced solutions rather than ideological rigidity. I value both economic opportunity and social justice, believing that a well-functioning society needs to address both dimensions. While I may lean slightly left on social issues and slightly right on fiscal matters, I try to evaluate each policy proposal on its merits rather than through a partisan lens."
+  },
+  "low_effort_threshold": 3
+}
