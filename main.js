@@ -156,11 +156,8 @@ exports.handler = async function (event, context) {
             cleanedResponses[id] = cleanFinalStateString(responses[id]);
         });
 
-        // Set current participant ID as environment variable for cross-duplicate check
-        process.env.CURRENT_PARTICIPANT_ID = participant_id;
-        
         // Start duplication promise
-        const duplicateResponsePromise = checkForCrossDuplicateResponses(cleanedResponses, survey_id);
+        const duplicateResponsePromise = checkForCrossDuplicateResponses(cleanedResponses, survey_id, participant_id);
 
         // Start categorization but do not wait for it to complete
         const uniqueIds = Object.keys(questions);

@@ -40,7 +40,7 @@ const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION || 'us-east-1' });
 
 // Get the other responses other participants have given to the survey
-const getOtherResponsesFromSurvey = async (cleanedFinalStates, surveyId) => {
+const getOtherResponsesFromSurvey = async (cleanedFinalStates, surveyId, currentParticipantId) => {
     console.log('Getting other responses from survey:', surveyId);
     
     try {
@@ -67,7 +67,7 @@ const getOtherResponsesFromSurvey = async (cleanedFinalStates, surveyId) => {
                         }
                         
                         // Only add if the response is from a different participant
-                        if (item.participantId !== process.env.CURRENT_PARTICIPANT_ID) {
+                        if (item.participantId !== currentParticipantId) {
                             // Use the other participant's response, not the current participant's
                             const otherParticipantResponse = item.responses[questionId] || '';
                             
@@ -195,10 +195,10 @@ const getGroupValue = async (surveyId, questionId) => {
 };
 
 // Check for cross-duplicate responses within the survey
-const checkForCrossDuplicateResponses = async (cleanedFinalStates, survey_id) => {
+const checkForCrossDuplicateResponses = async (cleanedFinalStates, survey_id, participant_id) => {
 
     // Get other responses from the survey
-    const otherResponses = await getOtherResponsesFromSurvey(cleanedFinalStates, survey_id);
+    const otherResponses = await getOtherResponsesFromSurvey(cleanedFinalStates, survey_id, participant_id);
     const cleanedFinalStateIds = Object.keys(cleanedFinalStates);
     const nonEmptyFinalStateIds = cleanedFinalStateIds.filter(id => cleanedFinalStates[id] !== '');
     const duplicateResponses = {};
