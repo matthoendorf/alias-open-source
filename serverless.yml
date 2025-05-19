@@ -1,0 +1,96 @@
+service: roundtable-alias
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+  memorySize: 256
+  timeout: 15
+  environment:
+    API_SECRET: ${file(./env.json):API_SECRET}
+    RESPONSES_TABLE: ${self:service}-${self:provider.stage}-responses
+    GROUPS_TABLE: ${self:service}-${self:provider.stage}-groups
+    IDENTIFY_DUPLICATES_FUNCTION: ${self:service}-${self:provider.stage}-identifyDuplicates
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RESPONSES_TABLE}"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.GROUPS_TABLE}"
+        - Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+          Resource:
+            - "arn:aws:lambda:${self:provider.region}:*:function:${self:provider.environment.IDENTIFY_DUPLICATES_FUNCTION}"
+
+functions:
+  api:
+    handler: main.handler
+    events:
+      - http:
+          path: /
+          method: post
+          cors: true
+      - http:
+          path: /
+          method: options
+          cors: true
+  identifyDuplicates:
+    handler: identify-duplicates.handler
+    events:
+      - http:
+          path: /identify-duplicates
+          method: post
+          cors: true
+
+resources:
+  Resources:
+    ResponsesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.RESPONSES_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: surveyId
+            AttributeType: S
+          - AttributeName: participantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: surveyId
+            KeyType: HASH
+          - AttributeName: participantId
+            KeyType: RANGE
+    
+    GroupsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.GROUPS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: surveyId
+            AttributeType: S
+          - AttributeName: questionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: surveyId
+            KeyType: HASH
+          - AttributeName: questionId
+            KeyType: RANGE
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3000

@@ -7,15 +7,31 @@
   "scripts": {
     "start": "node main.js",
     "lint": "eslint . --fix",
-    "test": "jest"
+    "test": "jest",
+    "dev": "serverless offline",
+    "deploy": "serverless deploy"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.427.0",
+    "@aws-sdk/client-lambda": "^3.427.0",
+    "@aws-sdk/lib-dynamodb": "^3.427.0",
+    "dotenv": "^16.5.0",
     "he": "^1.2.0",
     "openai": "^4.52.0",
     "sanitize-html": "^2.12.0"
   },
+  "devDependencies": {
+    "serverless": "^3.38.0",
+    "serverless-offline": "^13.3.0"
+  },
   "engines": {
     "node": ">=18"
   },
-  "keywords": []
+  "keywords": [
+    "aws",
+    "lambda",
+    "openai",
+    "survey",
+    "analysis"
+  ]
 }

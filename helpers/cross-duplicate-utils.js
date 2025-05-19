@@ -27,35 +27,97 @@ const runDuplicateCheck = (a, b) => {
   return shouldRunMetric({ longer, shorter, diff: longer - shorter });
 };
 
+// AWS SDK for DynamoDB
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, QueryCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
+const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
+
+// Initialize DynamoDB client
+const ddbClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1' });
+const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
+
+// Initialize Lambda client
+const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION || 'us-east-1' });
+
 // Get the other responses other participants have given to the survey
 const getOtherResponsesFromSurvey = async (cleanedFinalStates, surveyId) => {
-    console.log('This function should get other responses from the survey:', surveyId);
-    const otherResponses = {}; // This is a placeholder. Replace with actual logic to get other responses.
-    Object.keys(otherResponses).forEach(key => {
-        const cleanedFinalState = cleanFinalStates(cleanedFinalStates[key]);
-        otherResponses[key] = {
-            finalState: cleanedFinalState,
-            participantId: 'participantId', // Placeholder for actual participant ID
-            responseGroup: 0
+    console.log('Getting other responses from survey:', surveyId);
+    
+    try {
+        // Query DynamoDB for responses from this survey
+        const params = {
+            TableName: process.env.RESPONSES_TABLE || 'SurveyResponses',
+            KeyConditionExpression: 'surveyId = :surveyId',
+            ExpressionAttributeValues: {
+                ':surveyId': surveyId
+            }
         };
-    });
-
-    return otherResponses
+        
+        const { Items } = await ddbDocClient.send(new QueryCommand(params));
+        
+        // Format responses for duplicate checking
+        const otherResponses = {};
+        
+        if (Items && Items.length > 0) {
+            Items.forEach(item => {
+                if (item.responses) {
+                    Object.keys(item.responses).forEach(questionId => {
+                        if (!otherResponses[questionId]) {
+                            otherResponses[questionId] = [];
+                        }
+                        
+                        // Only add if the response is from a different participant
+                        if (item.participantId !== process.env.CURRENT_PARTICIPANT_ID) {
+                            const cleanedFinalState = cleanedFinalStates[questionId] || '';
+                            
+                            otherResponses[questionId].push({
+                                finalState: cleanedFinalState,
+                                participantId: item.participantId,
+                                responseGroup: item.responseGroups ? item.responseGroups[questionId] || 0 : 0
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        
+        return otherResponses;
+    } catch (error) {
+        console.error('Error fetching other responses:', error);
+        // Return empty object on error to allow processing to continue
+        return {};
+    }
 }
 
 // Call the function to identify duplicates
 const batchedResponse = async (target, responses) => {
-    console.log('This function should call identify-duplicates.js on the server');
-    // Get file in ./identify-duplicates.js
-    const response = await fetch('https://api.example.com/identify-duplicates', {
-        method: 'POST',
-        body: JSON.stringify({ s1: target, responses }),
-    });
-    const { responsesWithMetrics, error } = await response.json();
-    if (error) {
-        throw new Error('Problem identifying duplicate responses');
+    console.log('Calling identify-duplicates Lambda function');
+    
+    try {
+        // Call the identify-duplicates Lambda function directly
+        const params = {
+            FunctionName: process.env.IDENTIFY_DUPLICATES_FUNCTION || 'roundtable-alias-dev-identifyDuplicates',
+            InvocationType: 'RequestResponse',
+            Payload: JSON.stringify({ 
+                body: JSON.stringify({ s1: target, responses })
+            })
+        };
+        
+        const { Payload } = await lambdaClient.send(new InvokeCommand(params));
+        const result = JSON.parse(Buffer.from(Payload).toString());
+        
+        // Parse the Lambda response
+        const body = JSON.parse(result.body);
+        
+        if (body.error) {
+            throw new Error('Problem identifying duplicate responses');
+        }
+        
+        return body.responsesWithMetrics;
+    } catch (error) {
+        console.error('Error calling identify-duplicates:', error);
+        throw error;
     }
-    return responsesWithMetrics;
 };
 
 // Helper function to divide an array into subarrays of size m
@@ -97,8 +159,33 @@ function findBestMatch(matchingResponses) {
 
 // Increment the group counter for the question if no duplicates are found
 const getGroupValue = async (surveyId, questionId) => {
-    console.log('This function should increment the group counter for question:', questionId);
-    return Math.floor(Math.random() * 1000) + 1; // Placeholder for actual logic to get group value
+    console.log('Incrementing group counter for question:', questionId);
+    
+    try {
+        // Update the group counter in DynamoDB
+        const params = {
+            TableName: process.env.GROUPS_TABLE || 'SurveyGroups',
+            Key: {
+                surveyId: surveyId,
+                questionId: questionId
+            },
+            UpdateExpression: 'SET groupCounter = if_not_exists(groupCounter, :start) + :increment',
+            ExpressionAttributeValues: {
+                ':start': 0,
+                ':increment': 1
+            },
+            ReturnValues: 'UPDATED_NEW'
+        };
+        
+        const { Attributes } = await ddbDocClient.send(new UpdateCommand(params));
+        
+        // Return the new group counter value
+        return Attributes.groupCounter;
+    } catch (error) {
+        console.error('Error incrementing group counter:', error);
+        // Fallback to a random value if DynamoDB operation fails
+        return Math.floor(Math.random() * 1000) + 1;
+    }
 };
 
 // Check for cross-duplicate responses within the survey
@@ -151,7 +238,7 @@ const checkForCrossDuplicateResponses = async (cleanedFinalStates, survey_id) =>
             const bestMatchGroup = findBestMatch(matchingResponses);
             responseGroups[id] = bestMatchGroup;
 
-            const duplicates = matchingResponses.filter(response => response.responseGroup === mostCommonGroupValue);
+            const duplicates = matchingResponses.filter(response => response.responseGroup === bestMatchGroup);
             duplicateResponses[id] = duplicates.map(response => response.s2);
         }
 

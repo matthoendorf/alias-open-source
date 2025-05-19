@@ -54,8 +54,26 @@ The overall pattern is that `main.js` orchestrates a set of narrowly focused hel
 git clone <repo>
 cd alias-open-source
 npm install                     # installs openai, he, sanitize-html, …
-export API_SECRET="Bearer sk-…" # your OpenAI key
-node main.js                    # or deploy as a Netlify / lambda function
+```
+
+Create an `env.json` file with your OpenAI API key:
+
+```json
+{
+  "API_SECRET": "Bearer sk-your-openai-api-key"
+}
+```
+
+You can use the provided `env.json.example` as a template.
+
+```
+npm run dev                     # start the serverless offline server
+```
+
+Or deploy to AWS:
+
+```
+npm run deploy                  # deploy to AWS
 ```
 
 ## Configuration

@@ -147,10 +147,26 @@ exports.handler = async function (event, context) {
         // Start categorization but do not wait for it to complete
         const uniqueIds = Object.keys(questions);
         const categorizationPromises = uniqueIds.map(id => {
-            return openAIGroupResponse(questions[id], responses[id]).then(({ result }) => { return { id, result }} );
+            return openAIGroupResponse(questions[id], responses[id])
+                .then(({ result }) => { 
+                    return { id, result };
+                })
+                .catch(error => {
+                    console.error(`Error in OpenAI categorization for ${id}:`, error);
+                    // Return a default value in case of error
+                    return { id, result: 'Valid' };
+                });
         });
         const lowEffortPromises = uniqueIds.map(id => {
-            return openAIEffortCategorization(questions[id], responses[id]).then(({ result }) => { return { id, result }} );
+            return openAIEffortCategorization(questions[id], responses[id])
+                .then(({ result }) => { 
+                    return { id, result };
+                })
+                .catch(error => {
+                    console.error(`Error in OpenAI effort categorization for ${id}:`, error);
+                    // Return a default value in case of error
+                    return { id, result: '5' };
+                });
         });
 
         const selfDuplicateResponses = checkForSelfDuplicateResponses(cleanedResponses);
@@ -170,30 +186,44 @@ exports.handler = async function (event, context) {
 
         // Loop through the results and categorize them
         Object.keys(questions).forEach(id => {
-            // -- OPenai categorizations --
+            // -- OpenAI categorizations --
             const openAIResult = openAIResults.find(result => result.id === id);
-            // Make sure result exists and is string
+            console.log(`OpenAI categorization for ${id}:`, openAIResult ? openAIResult.result : 'undefined');
+            
+            // Apply categorization flags based on OpenAI results
             if (openAIResult && typeof openAIResult.result === 'string') {
-                const lowerCaseResult = openAIResult.result.toLowerCase();
-                if (failureTypes.includes(lowerCaseResult)) {
-                    // Add punctuation
-                    let cleanedResultWithCapitalization = lowerCaseResult.charAt(0).toUpperCase() + lowerCaseResult.slice(1);
-                    // If gpt, capitalize every character
-                    if (cleanedResultWithCapitalization === 'Gpt') cleanedResultWithCapitalization = cleanedResultWithCapitalization.toUpperCase();
-                    checks[id].push(`Automated test: ${cleanedResultWithCapitalization}`);
+                const result = openAIResult.result;
+                
+                // Check for each failure type
+                if (result === 'GPT') {
+                    checks[id].push('GPT');
+                } else if (result === 'Profane') {
+                    checks[id].push('Profane');
+                } else if (result === 'Gibberish') {
+                    checks[id].push('Gibberish');
+                } else if (result === 'Off-topic') {
+                    checks[id].push('Off-topic');
                 }
             }
 
             // -- Effort ratings --
             const effortResult = lowEffortResults.find(result => result.id === id);
             if (effortResult) {
-                if (parseInt(effortResult.result) <= lowEffortThreshold) {
-                    if (responses[id].length > 0) checks[id].push('Low-effort');
+                try {
+                    const effortRating = parseInt(effortResult.result);
+                    if (!isNaN(effortRating) && effortRating <= lowEffortThreshold) {
+                        if (responses[id].length > 0) {
+                            checks[id].push('Low-effort');
+                        }
+                    }
+                    effortRatings[id] = effortRating;
+                } catch (error) {
+                    console.error(`Error parsing effort rating for ${id}:`, error);
+                    effortRatings[id] = 0;
                 }
-                effortRatings[id] = parseInt(effortResult.result);
             } else {
                 effortRatings[id] = 0;
-            };
+            }
         });
 
         // Add cross duplicate response to checks
