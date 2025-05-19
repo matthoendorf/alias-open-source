@@ -124,6 +124,8 @@ The API will return a response with the following structure:
 
 The `checks` field will contain any flags for problematic responses (e.g., "Profane", "Off-topic", "Gibberish", "GPT", "Low-effort", "Cross-duplicate response", "Self-duplicate response").
 
+For more detailed information about the API endpoints, request/response formats, and usage examples, please refer to the [API Documentation](API.md).
+
 ## Customization
 
 You can customize the Lambda function by modifying the following files:

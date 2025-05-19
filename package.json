@@ -9,7 +9,8 @@
     "lint": "eslint . --fix",
     "test": "jest",
     "dev": "serverless offline",
-    "deploy": "serverless deploy"
+    "deploy": "serverless deploy",
+    "test-api": "node test-api.js"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.427.0",

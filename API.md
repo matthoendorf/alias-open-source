@@ -204,3 +204,35 @@ Common error scenarios include:
 |-------------|---------------|-------------|
 | 400 | "Must pass a serialized JSON object or a query string" | Invalid request format |
 | 400 | "Missing questions, survey_id, participant_id, responses" | Required parameters are missing |
+| 400 | "The following fields must be objects: questions, responses" | Invalid parameter types |
+| 400 | "The following fields must be strings: survey_id, participant_id" | Invalid parameter types |
+| 400 | "Questions and responses must have the same keys" | Mismatch between question and response IDs |
+| 500 | "Request timed out" | The request took too long to process (exceeds `TIMEOUT_MS` in config) |
+| 500 | "Problem parsing request body" | Could not parse the request body |
+| 500 | "An unknown error occurred" | Unexpected server error |
+
+## Rate Limits
+
+The API does not currently implement rate limiting. However, it's recommended to limit requests to a reasonable frequency to avoid overloading the server and incurring unnecessary costs.
+
+## Authentication
+
+The API uses the OpenAI API key specified in the `env.json` file for categorization and effort scoring. No additional authentication is required to access the API endpoints.
+
+When deploying to production, it's recommended to implement proper authentication mechanisms to secure your API endpoints.
+
+## Configuration
+
+The API behavior can be customized by modifying the `config.js` file. Key configuration parameters include:
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `TIMEOUT_MS` | Maximum time (in milliseconds) for processing a request | 15000 |
+| `normLevThreshold` | Maximum normalized Levenshtein distance for duplicate detection | 0.2 |
+| `rawLevThreshold` | Maximum raw Levenshtein distance for duplicate detection | 10 |
+| `normLCSThreshold` | Minimum normalized longest common substring ratio for duplicate detection | 0.7 |
+| `rawLCSThreshold` | Minimum raw longest common substring length for duplicate detection | 20 |
+| `maxBatchSize` | Maximum batch size for duplicate detection | 100 |
+| `openAIModel` | OpenAI model used for categorization and effort scoring | "gpt-4o" |
+
+For more information on configuration, refer to the [README.md](README.md) file.

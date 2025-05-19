@@ -70,6 +70,12 @@ You can use the provided `env.json.example` as a template.
 npm run dev                     # start the serverless offline server
 ```
 
+To test the API with a sample request:
+
+```
+npm run test-api                # run the test script (make sure the server is running)
+```
+
 Or deploy to AWS:
 
 ```
@@ -94,6 +100,10 @@ npm run deploy                  # deploy to AWS
 * **maxBatchSize**: When checking a target answer against other responses, we chunk that list into batches no larger than this before sending them to `identify-duplicates.js`.  
 
 * **openAIModel**: Name of the OpenAI chat model used for quality classification and effort scoring (defaults to `"gpt-4o"`).
+
+## API Documentation
+
+For detailed information about the API endpoints, request/response formats, and usage examples, please refer to the [API Documentation](API.md).
 
 ### Still to implement
 
