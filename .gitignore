@@ -50,3 +50,4 @@ env.json
 .vscode/
 *.swp
 *.swo
+packaged.yml

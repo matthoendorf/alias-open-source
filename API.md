@@ -202,6 +202,7 @@ Common error scenarios include:
 
 | HTTP Status | Error Message | Description |
 |-------------|---------------|-------------|
+| 401 | "Missing API key" | API key is missing from the request headers |
 | 400 | "Must pass a serialized JSON object or a query string" | Invalid request format |
 | 400 | "Missing questions, survey_id, participant_id, responses" | Required parameters are missing |
 | 400 | "The following fields must be objects: questions, responses" | Invalid parameter types |
@@ -217,9 +218,23 @@ The API does not currently implement rate limiting. However, it's recommended to
 
 ## Authentication
 
-The API uses the OpenAI API key specified in the `env.json` file for categorization and effort scoring. No additional authentication is required to access the API endpoints.
+The API is protected with API key authentication. All requests to the API endpoints must include an `x-api-key` header with a valid API key.
 
-When deploying to production, it's recommended to implement proper authentication mechanisms to secure your API endpoints.
+Example:
+```
+curl -X POST https://your-api-endpoint.com/ \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: your-api-key" \
+  -d '{"questions": {...}, "survey_id": "...", ...}'
+```
+
+The API key is generated during deployment and can be found in the AWS API Gateway console. If you're using the Serverless Framework CLI, you can retrieve the API key using the following command:
+
+```
+serverless info --stage <stage-name> --verbose
+```
+
+Additionally, the API uses the OpenAI API key specified in the `env.json` file for categorization and effort scoring.
 
 ## Configuration
 

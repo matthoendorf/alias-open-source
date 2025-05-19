@@ -70,6 +70,14 @@ You can use the provided `env.json.example` as a template.
 npm run dev                     # start the serverless offline server
 ```
 
+When the API is deployed, it will be protected with an API key. All requests to the API endpoints must include an `x-api-key` header with the API key value. The API key is generated during deployment and can be found in the AWS API Gateway console or by running:
+
+```
+serverless info --stage <stage-name> --verbose
+```
+
+For local development with serverless-offline, you can use any value for the `x-api-key` header as it's only enforced in the deployed environment.
+
 To test the API with a sample request:
 
 ```

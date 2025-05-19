@@ -65,12 +65,27 @@ exports.handler = async function (event, context) {
     // Set CORS headers
     const headers = {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS"
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, x-api-key"
     };
 
     // Handle preflight OPTIONS request
     if (event.httpMethod === 'OPTIONS') {
         return { statusCode: 204, headers, body: '' };
+    }
+
+    // API Gateway will handle API key validation for endpoints marked as private
+    // This is a secondary validation in case the API is called directly
+    const apiKey = event.headers['x-api-key'];
+    if (!apiKey) {
+        return {
+            statusCode: 401,
+            headers,
+            body: JSON.stringify({
+                error: true,
+                problem: 'Missing API key'
+            })
+        };
     }
 
     let errorText = '';
@@ -141,6 +156,9 @@ exports.handler = async function (event, context) {
             cleanedResponses[id] = cleanFinalStateString(responses[id]);
         });
 
+        // Set current participant ID as environment variable for cross-duplicate check
+        process.env.CURRENT_PARTICIPANT_ID = participant_id;
+        
         // Start duplication promise
         const duplicateResponsePromise = checkForCrossDuplicateResponses(cleanedResponses, survey_id);
 

@@ -5,9 +5,28 @@ exports.handler = async function (event, context) {
     // Set CORS headers
     const headers = {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "POST"
+        "Access-Control-Allow-Headers": "Content-Type, x-api-key",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
     };
+
+    // Handle preflight OPTIONS request
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 204, headers, body: '' };
+    }
+
+    // API Gateway will handle API key validation for endpoints marked as private
+    // This is a secondary validation in case the API is called directly
+    const apiKey = event.headers['x-api-key'];
+    if (!apiKey) {
+        return {
+            statusCode: 401,
+            headers,
+            body: JSON.stringify({
+                error: true,
+                problem: 'Missing API key'
+            })
+        };
+    }
 
     try {
         // Parse the request body

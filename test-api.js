@@ -34,6 +34,7 @@ const options = {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
+    'x-api-key': 'test-api-key', // For local development, any value works. In production, use the actual API key.
   }
 };
 

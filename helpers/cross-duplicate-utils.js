@@ -68,10 +68,16 @@ const getOtherResponsesFromSurvey = async (cleanedFinalStates, surveyId) => {
                         
                         // Only add if the response is from a different participant
                         if (item.participantId !== process.env.CURRENT_PARTICIPANT_ID) {
-                            const cleanedFinalState = cleanedFinalStates[questionId] || '';
+                            // Use the other participant's response, not the current participant's
+                            const otherParticipantResponse = item.responses[questionId] || '';
+                            
+                            // Clean the other participant's response the same way we clean the current participant's
+                            const cleanedOtherResponse = otherParticipantResponse.toString().toLowerCase()
+                                .replace(/\n/g, ' ')
+                                .replace(/[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]/g, '');
                             
                             otherResponses[questionId].push({
-                                finalState: cleanedFinalState,
+                                finalState: cleanedOtherResponse,
                                 participantId: item.participantId,
                                 responseGroup: item.responseGroups ? item.responseGroups[questionId] || 0 : 0
                             });

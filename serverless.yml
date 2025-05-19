@@ -7,8 +7,12 @@ provider:
   runtime: nodejs18.x
   stage: ${opt:stage, 'dev'}
   region: us-east-1
+  profile: ${opt:profile, 'default'}
   memorySize: 256
   timeout: 15
+  apiGateway:
+    apiKeys:
+      - ${self:service}-${self:provider.stage}-apikey
   environment:
     API_SECRET: ${file(./env.json):API_SECRET}
     RESPONSES_TABLE: ${self:service}-${self:provider.stage}-responses
@@ -42,6 +46,7 @@ functions:
           path: /
           method: post
           cors: true
+          private: true
       - http:
           path: /
           method: options
@@ -53,6 +58,7 @@ functions:
           path: /identify-duplicates
           method: post
           cors: true
+          private: true
 
 resources:
   Resources:
