@@ -25,8 +25,8 @@ const levenshteinDistance = (s1, s2) => {
         for (j = 1; j <= len2; j++) {
             var cost = (s1[i - 1] === s2[j - 1]) ? 0 : 1;
             currentRow[j] = Math.min(
-                currentRow[j - 1] + 1, 
-                prevRow[j] + 1, 
+                currentRow[j - 1] + 1,
+                prevRow[j] + 1,
                 prevRow[j - 1] + cost
             );
         }

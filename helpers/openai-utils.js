@@ -64,11 +64,11 @@ const callOpenAI = async (messages) => {
 
         let content = response.choices[0].message.content.trim();
         console.log('Original OpenAI response:', content);
-        
+
         // Normalize the content to ensure consistent categorization
         // This is critical for the categorization flags to work properly
         const lowerContent = content.toLowerCase();
-        
+
         // Exact matching for categorization types
         if (lowerContent === 'gpt') {
             content = 'GPT';
@@ -94,7 +94,7 @@ const callOpenAI = async (messages) => {
                 content = 'Valid';
             }
         }
-        
+
         console.log('Normalized response:', content);
         return { result: content };
     } catch (error) {
