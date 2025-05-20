@@ -46,7 +46,7 @@ functions:
           path: /
           method: post
           cors: true
-          private: true
+          private: false
       - http:
           path: /
           method: options
@@ -58,7 +58,7 @@ functions:
           path: /identify-duplicates
           method: post
           cors: true
-          private: true
+          private: false
 
 resources:
   Resources:

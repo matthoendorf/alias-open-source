@@ -16,8 +16,10 @@ exports.handler = async function (event, context) {
 
     // API Gateway will handle API key validation for endpoints marked as private
     // This is a secondary validation in case the API is called directly
+    // For local development, we'll bypass this check
+    const isLocalDevelopment = process.env.IS_OFFLINE === 'true';
     const apiKey = event.headers['x-api-key'];
-    if (!apiKey) {
+    if (!isLocalDevelopment && !apiKey) {
         return {
             statusCode: 401,
             headers,
@@ -57,7 +59,7 @@ exports.handler = async function (event, context) {
 
             const s2 = response.finalState;
             const maxStringLength = Math.max(s1.length, s2.length);
-            
+
             // Handle edge case of empty strings
             if (maxStringLength === 0) {
                 return { ...response, s1, s2, nlev: 0, rlev: 0, nlcs: 0, rlcs: 0 };
@@ -67,7 +69,7 @@ exports.handler = async function (event, context) {
             const nlev = rlev / maxStringLength;
             const rlcs = longestCommonSubstring(s1, s2);
             const nlcs = rlcs / maxStringLength;
-            
+
             return { ...response, s1, s2, nlev, rlev, nlcs, rlcs };
         });
 
@@ -80,7 +82,7 @@ exports.handler = async function (event, context) {
     } catch (error) {
         console.error('Error in identify-duplicates handler:', error);
         const errorTextForReturn = error.message || "An error occurred while processing the request";
-        
+
         return {
             statusCode: 500,
             headers,

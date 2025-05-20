@@ -5,6 +5,14 @@ const { checkForCrossDuplicateResponses, checkIfMatch } = require('./helpers/cro
 const { isJsonString, parseQueryString, parseJSON } = require('./helpers/json-utils');
 const config = require('./config');
 
+// AWS SDK for DynamoDB
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
+
+// Initialize DynamoDB client
+const ddbClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1' });
+const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
+
 // -- -- --
 // Script starts here
 // -- -- --
@@ -76,8 +84,10 @@ exports.handler = async function (event, context) {
 
     // API Gateway will handle API key validation for endpoints marked as private
     // This is a secondary validation in case the API is called directly
+    // For local development, we'll bypass this check
+    const isLocalDevelopment = process.env.IS_OFFLINE === 'true';
     const apiKey = event.headers['x-api-key'];
-    if (!apiKey) {
+    if (!isLocalDevelopment && !apiKey) {
         return {
             statusCode: 401,
             headers,
@@ -163,7 +173,7 @@ exports.handler = async function (event, context) {
         const uniqueIds = Object.keys(questions);
         const categorizationPromises = uniqueIds.map(id => {
             return openAIGroupResponse(questions[id], responses[id])
-                .then(({ result }) => { 
+                .then(({ result }) => {
                     return { id, result };
                 })
                 .catch(error => {
@@ -174,7 +184,7 @@ exports.handler = async function (event, context) {
         });
         const lowEffortPromises = uniqueIds.map(id => {
             return openAIEffortCategorization(questions[id], responses[id])
-                .then(({ result }) => { 
+                .then(({ result }) => {
                     return { id, result };
                 })
                 .catch(error => {
@@ -204,11 +214,11 @@ exports.handler = async function (event, context) {
             // -- OpenAI categorizations --
             const openAIResult = openAIResults.find(result => result.id === id);
             console.log(`OpenAI categorization for ${id}:`, openAIResult ? openAIResult.result : 'undefined');
-            
+
             // Apply categorization flags based on OpenAI results
             if (openAIResult && typeof openAIResult.result === 'string') {
                 const result = openAIResult.result;
-                
+
                 // Check for each failure type
                 if (result === 'GPT') {
                     checks[id].push('GPT');
@@ -260,10 +270,85 @@ exports.handler = async function (event, context) {
             effort_ratings: effortRatings,
         };
 
+        // Store the response in DynamoDB for future cross-duplicate checks
+        try {
+            await storeResponseInDynamoDB(survey_id, participant_id, responses, responseGroups);
+            console.log('Successfully stored response in DynamoDB');
+        } catch (error) {
+            console.error('Error storing response in DynamoDB:', error);
+            // Continue even if storing fails - we don't want to fail the request
+        }
+
         return {
             statusCode: 200,
             headers,
             body: JSON.stringify(returnBody),
+        }
+    };
+
+// In-memory storage for local development - make it global so it's shared between requests
+global.localResponsesStorage = global.localResponsesStorage || {};
+const localResponsesStorage = global.localResponsesStorage;
+
+    // Store the response in DynamoDB for future cross-duplicate checks
+    const storeResponseInDynamoDB = async (surveyId, participantId, responses, responseGroups) => {
+        console.log('Storing response in DynamoDB');
+        console.log('Survey ID:', surveyId);
+        console.log('Participant ID:', participantId);
+
+        try {
+            // Check if we're running in local development mode
+            const isLocalDevelopment = process.env.IS_OFFLINE === 'true';
+
+            if (isLocalDevelopment) {
+                // Use in-memory storage for local development
+                console.log('Using in-memory storage for local development');
+
+                // Initialize the survey in local storage if it doesn't exist
+                if (!localResponsesStorage[surveyId]) {
+                    localResponsesStorage[surveyId] = [];
+                }
+
+                // Add the response to local storage
+                localResponsesStorage[surveyId].push({
+                    surveyId: surveyId,
+                    participantId: participantId,
+                    responses: responses,
+                    responseGroups: responseGroups,
+                    timestamp: new Date().toISOString()
+                });
+
+                console.log('Successfully stored response in local storage');
+                console.log('Local storage now contains:', localResponsesStorage[surveyId].length, 'items for survey', surveyId);
+
+                // Make the local storage available to the cross-duplicate-utils module
+                const crossDuplicateUtils = require('./helpers/cross-duplicate-utils');
+                if (crossDuplicateUtils.localResponsesStorage) {
+                    crossDuplicateUtils.localResponsesStorage = localResponsesStorage;
+                }
+            } else {
+                // Prepare the item to store in DynamoDB
+                const params = {
+                    TableName: process.env.RESPONSES_TABLE || 'SurveyResponses',
+                    Item: {
+                        surveyId: surveyId,
+                        participantId: participantId,
+                        responses: responses,
+                        responseGroups: responseGroups,
+                        timestamp: new Date().toISOString()
+                    }
+                };
+
+                console.log('DynamoDB put params:', JSON.stringify(params));
+
+                // Store the item in DynamoDB
+                await ddbDocClient.send(new PutCommand(params));
+
+                console.log('Successfully stored response in DynamoDB');
+            }
+        } catch (error) {
+            console.error('Error storing response in DynamoDB:', error);
+            throw error;
         }
     };
 
