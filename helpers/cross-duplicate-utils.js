@@ -135,8 +135,8 @@ const getOtherResponsesFromSurvey = async (cleanedFinalStates, surveyId, current
         return otherResponses;
     } catch (error) {
         console.error('Error fetching other responses:', error);
-        // Return empty object on error to allow processing to continue
-        return {};
+        // Return a flag so callers know the query failed
+        return { error: true, details: error.message };
     }
 }
 
@@ -338,6 +338,18 @@ const checkForCrossDuplicateResponses = async (cleanedFinalStates, survey_id, pa
     const otherResponses = await getOtherResponsesFromSurvey(cleanedFinalStates, survey_id, participant_id);
     const cleanedFinalStateIds = Object.keys(cleanedFinalStates);
     const nonEmptyFinalStateIds = cleanedFinalStateIds.filter(id => cleanedFinalStates[id] !== '');
+
+    // If there was an error fetching the other responses, skip duplicate checks
+    if (otherResponses && otherResponses.error) {
+        console.log('Unable to retrieve prior responses; skipping cross-duplicate check.');
+        const duplicateResponses = {};
+        const responseGroups = {};
+        cleanedFinalStateIds.forEach(id => {
+            duplicateResponses[id] = [];
+            responseGroups[id] = cleanedFinalStates[id] === '' ? 0 : Math.floor(Math.random() * 1000) + 1;
+        });
+        return { duplicateResponses, responseGroups };
+    }
 
     console.log('Non-empty final state IDs:', nonEmptyFinalStateIds);
 
