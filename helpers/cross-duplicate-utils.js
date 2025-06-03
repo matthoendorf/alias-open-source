@@ -62,6 +62,7 @@ const getOtherResponsesFromSurvey = async (cleanedFinalStates, surveyId, current
         const isLocalDevelopment = process.env.IS_OFFLINE === 'true';
 
         let Items = [];
+        let lastEvaluatedKey;
 
         if (isLocalDevelopment) {
             // Use in-memory storage for local development
@@ -80,8 +81,16 @@ const getOtherResponsesFromSurvey = async (cleanedFinalStates, surveyId, current
 
             console.log('DynamoDB query params:', JSON.stringify(params));
 
-            const result = await ddbDocClient.send(new QueryCommand(params));
-            Items = result.Items || [];
+            do {
+                const queryParams = { ...params };
+                if (lastEvaluatedKey) {
+                    queryParams.ExclusiveStartKey = lastEvaluatedKey;
+                }
+
+                const result = await ddbDocClient.send(new QueryCommand(queryParams));
+                Items = Items.concat(result.Items || []);
+                lastEvaluatedKey = result.LastEvaluatedKey;
+            } while (lastEvaluatedKey);
         }
 
         console.log('Query returned items:', Items ? Items.length : 0);
@@ -135,8 +144,8 @@ const getOtherResponsesFromSurvey = async (cleanedFinalStates, surveyId, current
         return otherResponses;
     } catch (error) {
         console.error('Error fetching other responses:', error);
-        // Return empty object on error to allow processing to continue
-        return {};
+        // Return a flag so callers know the query failed
+        return { error: true, details: error.message };
     }
 }
 
@@ -343,6 +352,18 @@ const checkForCrossDuplicateResponses = async (cleanedFinalStates, survey_id, pa
     const cleanedFinalStateIds = Object.keys(cleanedFinalStates);
     const nonEmptyFinalStateIds = cleanedFinalStateIds.filter(id => cleanedFinalStates[id] !== '');
 
+    // If there was an error fetching the other responses, skip duplicate checks
+    if (otherResponses && otherResponses.error) {
+        console.log('Unable to retrieve prior responses; skipping cross-duplicate check.');
+        const duplicateResponses = {};
+        const responseGroups = {};
+        cleanedFinalStateIds.forEach(id => {
+            duplicateResponses[id] = [];
+            responseGroups[id] = cleanedFinalStates[id] === '' ? 0 : Math.floor(Math.random() * 1000) + 1;
+        });
+        return { duplicateResponses, responseGroups };
+    }
+
     console.log('Non-empty final state IDs:', nonEmptyFinalStateIds);
 
     let duplicateResponses = {};
@@ -437,4 +458,10 @@ const checkForCrossDuplicateResponses = async (cleanedFinalStates, survey_id, pa
     return { duplicateResponses, responseGroups };
 }
 
-module.exports = { checkForCrossDuplicateResponses, checkIfMatch, divideArray, localResponsesStorage };
+module.exports = {
+  checkForCrossDuplicateResponses,
+  checkIfMatch,
+  divideArray,
+  localResponsesStorage,
+  getOtherResponsesFromSurvey
+};
