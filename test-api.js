@@ -30,7 +30,7 @@ const testData = {
 const options = {
   hostname: 'localhost',
   port: 3000,
-  path: '/',
+  path: '/dev',
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
