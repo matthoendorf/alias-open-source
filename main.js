@@ -17,7 +17,7 @@ const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 // Script starts here
 // -- -- --
 
-// Remove HTML tags from a string
+// Convert HTML entities to characters in a string
 const convertHTMLEntities = (str) => {
     return he.decode(str);
 }
