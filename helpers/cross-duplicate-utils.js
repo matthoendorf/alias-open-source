@@ -341,8 +341,8 @@ const checkForCrossDuplicateResponses = async (cleanedFinalStates, survey_id, pa
 
     console.log('Non-empty final state IDs:', nonEmptyFinalStateIds);
 
-    const duplicateResponses = {};
-    const responseGroups = {};
+    let duplicateResponses = {};
+    let responseGroups = {};
 
     try {
         // Batch and check for duplicates in each responses in parallel
