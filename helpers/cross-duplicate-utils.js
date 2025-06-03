@@ -228,6 +228,10 @@ const batchedResponse = async (target, responses) => {
 
 // Helper function to divide an array into subarrays of size m
 const divideArray = (arr, m) => {
+    if (m <= 0) {
+        return arr.length > 0 ? [arr] : [];
+    }
+
     const n = arr.length;
     const subarraySize = Math.floor(n / m);
     const remainder = n % m;
@@ -457,6 +461,7 @@ const checkForCrossDuplicateResponses = async (cleanedFinalStates, survey_id, pa
 module.exports = {
   checkForCrossDuplicateResponses,
   checkIfMatch,
+  divideArray,
   localResponsesStorage,
   getOtherResponsesFromSurvey
 };
