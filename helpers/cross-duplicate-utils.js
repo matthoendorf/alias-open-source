@@ -62,6 +62,7 @@ const getOtherResponsesFromSurvey = async (cleanedFinalStates, surveyId, current
         const isLocalDevelopment = process.env.IS_OFFLINE === 'true';
 
         let Items = [];
+        let lastEvaluatedKey;
 
         if (isLocalDevelopment) {
             // Use in-memory storage for local development
@@ -80,8 +81,16 @@ const getOtherResponsesFromSurvey = async (cleanedFinalStates, surveyId, current
 
             console.log('DynamoDB query params:', JSON.stringify(params));
 
-            const result = await ddbDocClient.send(new QueryCommand(params));
-            Items = result.Items || [];
+            do {
+                const queryParams = { ...params };
+                if (lastEvaluatedKey) {
+                    queryParams.ExclusiveStartKey = lastEvaluatedKey;
+                }
+
+                const result = await ddbDocClient.send(new QueryCommand(queryParams));
+                Items = Items.concat(result.Items || []);
+                lastEvaluatedKey = result.LastEvaluatedKey;
+            } while (lastEvaluatedKey);
         }
 
         console.log('Query returned items:', Items ? Items.length : 0);
@@ -445,4 +454,9 @@ const checkForCrossDuplicateResponses = async (cleanedFinalStates, survey_id, pa
     return { duplicateResponses, responseGroups };
 }
 
-module.exports = { checkForCrossDuplicateResponses, checkIfMatch, localResponsesStorage };
+module.exports = {
+  checkForCrossDuplicateResponses,
+  checkIfMatch,
+  localResponsesStorage,
+  getOtherResponsesFromSurvey
+};
